@@ -1,0 +1,394 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{utf8}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{primarycolor}{RGB}{31, 73, 125}
+\definecolor{secondarycolor}{RGB}{89, 89, 89}
+\definecolor{codebg}{RGB}{245, 245, 245}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primarycolor,
+    citecolor=primarycolor,
+    urlcolor=primarycolor
+}
+
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{primarycolor}\bfseries,
+    commentstyle=\color{secondarycolor}\itshape,
+    stringstyle=\color{teal},
+    breaklines=true,
+    frame=single,
+    captionpos=b,
+    showstringspaces=false
+}
+
+\begin{document}
+
+% -----------------------------------------------------------------
+% PORTADA SOBRIA Y NEUTRAL
+% -----------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    {\Huge \bfseries \color{primarycolor} ASISTDOC} \\[0.5cm]
+    {\Large \bfseries Sistema Local para la Gestión de Asistencia y Calificaciones Académicas} \\[1.5cm]
+
+    \rule{\linewidth}{0.5mm} \\[1cm]
+
+    {\large \bfseries INFORME TÉCNICO DE INGENIERÍA DE SOFTWARE} \\[2cm]
+
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \large
+            \textbf{Autor:} \\[0.2cm]
+            Estudiante de Ingeniería / Sistemas \\[0.1cm]
+            \textit{[Nombre del Estudiante]}
+        \end{flushleft}
+    \end{minipage}
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \large
+            \textbf{Docente / Evaluador:} \\[0.2cm]
+            \textit{[Nombre del Docente]} \\[0.1cm]
+            \textbf{Curso:} \\[0.2cm]
+            Ingeniería de Software / Sistemas
+        \end{flushright}
+    \end{minipage}
+
+    \vfill
+
+    {\large 2026}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------
+% RESUMEN
+% -----------------------------------------------------------------
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+El presente documento constituye el Informe Técnico del sistema \textbf{AsistDoc}, una aplicación local modular desarrollada para optimizar la gestión académica individual de docentes de nivel universitario e industrial. El proyecto aborda la problemática del consumo excesivo de tiempo en registros manuales, hojas de cálculo dispersas e imprecisión en la identificación oportuna de estudiantes en riesgo académico. Construido con una arquitectura desacoplada en Python 3.12, interfaz Streamlit, persistencia SQLite transaccional y librerías especializadas (\textit{pandas}, \textit{openpyxl}, \textit{ReportLab}, \textit{Plotly}), AsistDoc permite gestionar periodos, cursos, horarios, asistencias con tolerancia automática, matriz de calificaciones con pesos y redondeos personalizables, cálculo dinámico de metas en evaluaciones pendientes, motor de reglas de riesgo y generación de actas exportables en Excel y PDF. El sistema opera 100\% de forma local y offline, garantizando privacidad, rendimiento fluido e integridad de datos respaldada por una suite de 28 pruebas unitarias en \textit{pytest}.
+
+\newpage
+
+% -----------------------------------------------------------------
+% 1. INTRODUCCIÓN
+% -----------------------------------------------------------------
+\section{Introducción}
+La gestión académica eficiente representa uno de los factores críticos para la labor docente universitaria. Tareas operativas como el control diario de asistencia, el cálculo continuo de promedios ponderados, la consolidación de notas con pesos porcentuales variables y la generación de actas oficiales demandan una fracción significativa de tiempo que podría destinarse a la preparación pedagógica y tutoría académica.
+
+Frecuentemente, los docentes recurren al uso de cuadernos de notas o archivos dispersos en hojas de cálculo tradicionales. Esta práctica conlleva riesgos inherentes como errores de transcripción, falta de trazabilidad ante reclamos, pérdida de datos por fallos de hardware y la imposibilidad de detectar con anticipación a aquellos estudiantes cuya asistencia o rendimiento compromete su permanencia en la asignatura.
+
+\textbf{AsistDoc} surge como una solución tecnológica local, integral y autónoma que centraliza toda la información académica en un único entorno robusto, eliminando la dependencia de servidores remotos o conexión a internet.
+
+% -----------------------------------------------------------------
+% 2. DESCRIPCIÓN DEL PROYECTO
+% -----------------------------------------------------------------
+\section{Descripción del Proyecto}
+
+\subsection{Nombre del Proyecto}
+\textbf{AsistDoc} — Sistema de Gestión Académica Local.
+
+\subsection{Problemática}
+Los principales inconvenientes identificados en la gestión tradicional son:
+\begin{itemize}
+    \item \textbf{Dispersión de información:} Múltiples versiones de archivos Excel que originan inconsistencias en las notas finales.
+    \item \textbf{Lentitud en el registro:} Demora excesiva en la toma de asistencia y registro individual de notas durante la sesión lectiva.
+    \item \textbf{Falta de alertas oportunas:} Dificultad para calcular manualmente qué estudiantes superaron el límite de inasistencias o poseen un promedio desaprobatorio antes del cierre del curso.
+    \item \textbf{Vulnerabilidad de datos:} Ausencia de un historial de cambios auditado que permita verificar modificaciones en las calificaciones.
+\end{itemize}
+
+\subsection{Justificación}
+El desarrollo de AsistDoc se justifica por la necesidad de proveer una herramienta rápida, segura y portable que automatice los cálculos matemáticos rigurosos (pesos porcentuales, equivalencias de la condición 'No Se Presentó' — NP, redondeos configurables) y permita exportar documentos con formato institucional en segundos, resguardando la integridad mediante bases de datos relacionales con restricciones estrictas.
+
+\subsection{Objetivo General}
+Diseñar, construir e implementar un software local e independiente para la gestión eficiente de periodos lectivos, asignaturas, asistencias, evaluaciones, calificaciones, análisis de riesgo y reportes académicos por parte de un único docente.
+
+\subsection{Objetivos Específicos}
+\begin{enumerate}
+    \item Implementar un esquema relacional SQLite en \texttt{asistdoc.db} con activación explícita de claves foráneas, restricciones de unicidad e índices de rendimiento.
+    \item Desarrollar un módulo de asistencia que permita registrar la llegada de alumnos con cálculo automático de tardanzas según minutos de tolerancia y horas de inicio.
+    \item Construir un módulo de calificaciones con matriz dinámica y modo de "Ingreso Rápido" con búsqueda normalizada mediante eliminación de diacríticos y tildes.
+    \item Diseñar un motor de reglas para identificar automáticamente estudiantes en riesgo por rendimiento o asistencia.
+    \item Implementar la exportación de actas oficiales de notas y reportes en formatos Excel (\textit{openpyxl}) y PDF (\textit{ReportLab}).
+    \item Garantizar la seguridad mediante historial de auditoría y gestión de copias de seguridad de la base de datos.
+\end{enumerate}
+
+% -----------------------------------------------------------------
+% 3. GESTIÓN DEL PROYECTO
+% -----------------------------------------------------------------
+\section{Gestión del Proyecto de Software}
+
+\subsection{Alcance}
+El proyecto abarca:
+\begin{itemize}
+    \item Administración de periodos lectivos, cursos y horarios semanales.
+    \item Padrón general de alumnos e importación masiva desde CSV y Excel.
+    \item Sesiones de asistencia (apertura, marcado masivo, edición supervisada y cierre).
+    \item Evaluaciones con pesos porcentuales que suman 100\% y escala configurable (0–20).
+    \item Matriz de notas, ingreso rápido con soporte de valor nulo para "NP" y botón para deshacer el último cambio.
+    \item Herramienta calculadora de notas requeridas ("¿Cuánto necesita?").
+    \item Motor de clasificación de riesgo (NORMAL, ATENCIÓN, ALTO RIESGO).
+    \item Reportes estadísticos interactivos con Plotly.
+    \item Exportación a Excel y PDF; soporte para carnets QR.
+    \item Gestión de copias de seguridad (.db) e historial de auditoría.
+\end{itemize}
+
+\subsection{Fuera de Alcance}
+\begin{itemize}
+    \item Acceso multi-usuario o roles diferenciados (estudiantes, administrativos).
+    \item Autenticación remota o portales en la nube.
+    \item Sincronización con servidores institucionales externos.
+\end{itemize}
+
+\subsection{Entregables del Proyecto}
+\begin{table}[h!]
+\centering
+\caption{Matriz de Entregables del Proyecto AsistDoc}
+\begin{tabularx}{\textwidth}{l X c}
+\toprule
+\textbf{Entregables} & \textbf{Descripción} & \textbf{Estado} \\
+\midrule
+Código Fuente & Aplicación modular Python + Streamlit en \texttt{01\_Software} & Finalizado \\
+Base de Datos & Esquema SQLite relacional \texttt{asistdoc.db} & Finalizado \\
+Pruebas & Suite automatizada con 28 pruebas \texttt{pytest} & Finalizado \\
+Informe Técnico & Documentación técnica académica en LaTeX & Finalizado \\
+Manual de Usuario & Guía de operación para el docente en LaTeX & Finalizado \\
+Presentación & Diapositivas académicas Beamer (16:9) en LaTeX & Finalizado \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Cronograma de Actividades}
+\begin{table}[h!]
+\centering
+\caption{Cronograma de Fases de Desarrollo}
+\begin{tabularx}{\textwidth}{l X c}
+\toprule
+\textbf{Fase} & \textbf{Actividades Principales} & \textbf{Periodo} \\
+\midrule
+Fase 0--1 & Análisis de requisitos, diseño de arquitectura y esquema ER & Semana 1 \\
+Fase 2 & Implementación de \texttt{database.py}, PRAGMA y estructura de UI & Semana 1 \\
+Fase 3 & Módulos de cursos, horarios, alumnos e importación CSV/Excel & Semana 2 \\
+Fase 4 & Módulo de asistencias, tardanzas automáticas y cierres & Semana 2 \\
+Fase 5 & Módulo de evaluaciones, notas, NP, deshacer y "¿Cuánto necesita?" & Semana 3 \\
+Fase 6--7 & Motor de riesgo, gráficos Plotly, exportación Excel y PDF & Semana 3 \\
+Fase 8--9 & Módulo QR, utilidades de backups, auditoría y script \texttt{seed.py} & Semana 4 \\
+Fase 10 & Pruebas integrales de calidad con \texttt{pytest} y compilación final & Semana 4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Gestión de Riesgos}
+\begin{table}[h!]
+\centering
+\caption{Matriz de Gestión de Riesgos}
+\begin{tabularx}{\textwidth}{X c c X}
+\toprule
+\textbf{Riesgo Identificado} & \textbf{Prob.} & \textbf{Imp.} & \textbf{Estrategia de Mitigación} \\
+\midrule
+Corrupción de base de datos local & Baja & Alto & Implementación de transacciones automáticas (\texttt{with}) y backups timestamped en carpeta \texttt{backups/}. \\
+Incompatibilidad en formato de Excel importado & Media & Medio & Validación estricta de encabezados (\texttt{codigo}, \texttt{nombre}) con manejo de excepciones y pre-visualización. \\
+Limitaciones de foco de teclado en Streamlit & Alta & Medio & Diseño del modo "Ingreso Rápido" mediante formularios (\texttt{st.form}) y callbacks en \texttt{st.session\_state}. \\
+Falta de hardware de cámara para lectura QR & Media & Bajo & Desacoplamiento del módulo QR; la toma manual siempre está garantizada como opción principal. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------
+% 4. REQUISITOS DEL SISTEMA
+% -----------------------------------------------------------------
+\section{Requisitos del Sistema}
+
+\subsection{Requisitos Funcionales (RF)}
+\begin{itemize}
+    \item \textbf{RF-01 (Periodos y Cursos):} El sistema permitirá crear periodos lectivos y registrar cursos especificando sección, nota mínima, escala máxima, porcentaje límite de faltas y criterio de redondeo.
+    \item \textbf{RF-02 (Horarios):} Permitirá asignar días de la semana y rangos horarios con tolerancia en minutos por cada curso.
+    \item \textbf{RF-03 (Gestión e Importación de Alumnos):} Permitirá registrar alumnos individualmente o importarlos de archivos CSV/Excel con validación previa de columnas y códigos duplicados.
+    \item \textbf{RF-04 (Control de Asistencia):} Permitirá aperturar sesiones de asistencia, aplicar el botón "Todos presentes", calcular automáticamente tardanzas según la hora de registro y cerrar la sesión.
+    \item \textbf{RF-05 (Evaluaciones y Pesos):} Permitirá crear evaluaciones asignando un peso porcentual, validando que la suma activa del curso sea igual al 100\%.
+    \item \textbf{RF-06 (Ingreso Rápido de Notas):} Permitirá buscar estudiantes eliminando tildes y diacríticos, registrando calificaciones de 0 a 20 o la condición 'NP' (No Se Presentó).
+    \item \textbf{RF-07 (Cálculo Requerido):} Permitirá calcular mediante fórmula cuánta nota necesita un estudiante en una evaluación pendiente para alcanzar la nota mínima.
+    \item \textbf{RF-08 (Motor de Riesgo):} Clasificará automáticamente a los estudiantes en niveles de riesgo (NORMAL, ATENCIÓN, ALTO RIESGO) según notas e inasistencias.
+    \item \textbf{RF-09 (Exportación):} Generará actas oficiales en formato Excel (.xlsx) con estilos y formato condicional, así como documentos PDF imprimibles.
+    \item \textbf{RF-10 (Respaldo y Auditoría):} Permitirá generar copias de seguridad de la base de datos SQLite y revisar la tabla de historial de modificaciones.
+\end{itemize}
+
+\subsection{Requisitos No Funcionales (RNF)}
+\begin{itemize}
+    \item \textbf{RNF-01 (Operatividad Offline):} El sistema debe funcionar 100\% localmente sin requerir conexión a internet ni servidores externos.
+    \item \textbf{RNF-02 (Integridad Referencial):} SQLite debe aplicar restricciones de clave foránea (\texttt{PRAGMA foreign\_keys = ON}).
+    \item \textbf{RNF-03 (Usabilidad):} La interfaz debe estar completamente en idioma español, utilizando colores neutros y semánticos (verde = aprobado, rojo = desaprobado/riesgo).
+    \item \textbf{RNF-04 (Rendimiento):} El tiempo de respuesta de búsquedas y recálculo de notas debe ser menor a 0.5 segundos para grupos de hasta 500 alumnos.
+\end{itemize}
+
+% -----------------------------------------------------------------
+% 5. ARQUITECTURA DEL SOFTWARE
+% -----------------------------------------------------------------
+\section{Arquitectura del Software}
+AsistDoc adopta una arquitectura en capas modular y desacoplada, garantizando la separación de responsabilidades entre la presentación en pantalla, la lógica de negocio y la persistencia de datos.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto]
+    \node [rectangle, draw, fill=primarycolor!20, text width=8cm, text centered, rounded corners, minimum height=1cm] (ui) {\textbf{Capa de Presentación (UI Streamlit)} \\ \small \texttt{app.py} (Navegación, Widgets, Forms, Callbacks)};
+    \node [rectangle, draw, fill=secondarycolor!20, text width=8cm, text centered, rounded corners, minimum height=1cm, below=of ui] (logic) {\textbf{Capa de Lógica de Negocio} \\ \small \texttt{cursos.py}, \texttt{alumnos.py}, \texttt{asistencia.py}, \texttt{notas.py}, \texttt{reportes.py}};
+    \node [rectangle, draw, fill=teal!20, text width=8cm, text centered, rounded corners, minimum height=1cm, below=of logic] (data) {\textbf{Capa de Persistencia e Integración} \\ \small \texttt{database.py} (SQLite \texttt{asistdoc.db}), \texttt{exportaciones.py}, \texttt{backups.py}};
+
+    \draw [<->, thick] (ui) -- (logic);
+    \draw [<->, thick] (logic) -- (data);
+\end{tikzpicture}
+\caption{Diagrama de Arquitectura Modular en Capas de AsistDoc}
+\end{figure}
+
+% -----------------------------------------------------------------
+% 6. DISEÑO DE BASE DE DATOS
+% -----------------------------------------------------------------
+\section{Diseño de la Base de Datos}
+La persistencia de datos se administra mediante SQLite en el archivo \texttt{data/asistdoc.db}. La base de datos comprende 11 tablas perfectamente normalizadas.
+
+\subsection{Diagrama Entidad-Relación (E-R)}
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.8cm, auto, >=latex]
+    \node [rectangle, draw, fill=gray!20] (per) {\textbf{periodos}};
+    \node [rectangle, draw, fill=gray!20, right=of per] (cur) {\textbf{cursos}};
+    \node [rectangle, draw, fill=gray!20, above=of cur] (hor) {\textbf{horarios}};
+    \node [rectangle, draw, fill=gray!20, right=of cur] (mat) {\textbf{matriculas}};
+    \node [rectangle, draw, fill=gray!20, right=of mat] (alu) {\textbf{alumnos}};
+    \node [rectangle, draw, fill=gray!20, below=of cur] (eva) {\textbf{evaluaciones}};
+    \node [rectangle, draw, fill=gray!20, right=of eva] (not) {\textbf{notas}};
+    \node [rectangle, draw, fill=gray!20, below=of per] (ses) {\textbf{sesiones\_asistencia}};
+    \node [rectangle, draw, fill=gray!20, right=of ses] (asi) {\textbf{asistencias}};
+
+    \draw [->, thick] (per) -- node {1:N} (cur);
+    \draw [->, thick] (cur) -- node {1:N} (hor);
+    \draw [->, thick] (cur) -- node {1:N} (mat);
+    \draw [->, thick] (alu) -- node {1:N} (mat);
+    \draw [->, thick] (cur) -- node {1:N} (eva);
+    \draw [->, thick] (eva) -- node {1:N} (not);
+    \draw [->, thick] (alu) -- node {1:N} (not);
+    \draw [->, thick] (cur) -- node {1:N} (ses);
+    \draw [->, thick] (ses) -- node {1:N} (asi);
+    \draw [->, thick] (alu) -- node {1:N} (asi);
+\end{tikzpicture}
+\caption{Diagrama Simplificado de Relaciones SQLite}
+\end{figure}
+
+\subsection{Estructura de Tablas Principal}
+\begin{itemize}
+    \item \textbf{\texttt{periodos}:} \texttt{id} (PK), \texttt{nombre} (UNIQUE), \texttt{fecha\_inicio}, \texttt{fecha\_fin}, \texttt{activo}.
+    \item \textbf{\texttt{cursos}:} \texttt{id} (PK), \texttt{periodo\_id} (FK), \texttt{nombre}, \texttt{seccion}, \texttt{nota\_minima}, \texttt{escala\_max}, \texttt{limite\_faltas\_pct}, \texttt{redondeo\_desde}, \texttt{activo}. Restricción \texttt{UNIQUE(periodo\_id, nombre, seccion)}.
+    \item \textbf{\texttt{alumnos}:} \texttt{id} (PK), \texttt{codigo} (UNIQUE), \texttt{nombre}, \texttt{activo}.
+    \item \textbf{\texttt{matriculas}:} \texttt{id} (PK), \texttt{alumno\_id} (FK), \texttt{curso\_id} (FK), \texttt{fecha\_matricula}, \texttt{activo}. Restricción \texttt{UNIQUE(alumno\_id, curso\_id)}.
+    \item \textbf{\texttt{sesiones\_asistencia}:} \texttt{id} (PK), \texttt{curso\_id} (FK), \texttt{fecha}, \texttt{hora\_inicio}, \texttt{hora\_cierre}, \texttt{estado}. Restricción \texttt{UNIQUE(curso\_id, fecha)}.
+    \item \textbf{\texttt{asistencias}:} \texttt{id} (PK), \texttt{sesion\_id} (FK), \texttt{alumno\_id} (FK), \texttt{hora\_llegada}, \texttt{estado}, \texttt{nota\_texto}. Restricción \texttt{UNIQUE(sesion\_id, alumno\_id)}.
+    \item \textbf{\texttt{evaluaciones}:} \texttt{id} (PK), \texttt{curso\_id} (FK), \texttt{nombre}, \texttt{peso}, \texttt{orden}, \texttt{activa}.
+    \item \textbf{\texttt{notas}:} \texttt{id} (PK), \texttt{alumno\_id} (FK), \texttt{evaluacion\_id} (FK), \texttt{valor} (NULL si NP), \texttt{estado} ('registrada', 'NP', 'pendiente'). Restricción \texttt{UNIQUE(alumno\_id, evaluacion\_id)}.
+    \item \textbf{\texttt{historial}:} \texttt{id} (PK), \texttt{tabla}, \texttt{registro\_id}, \texttt{campo}, \texttt{valor\_anterior}, \texttt{valor\_nuevo}, \texttt{accion}, \texttt{fecha\_hora}.
+\end{itemize}
+
+% -----------------------------------------------------------------
+% 7. DESARROLLO E IMPLEMENTACIÓN
+% -----------------------------------------------------------------
+\section{Desarrollo e Implementación}
+
+\subsection{Normalización de Búsquedas sin Tildes}
+Para garantizar una experiencia fluida al buscar alumnos por nombre o código, se implementó una función de normalización en \texttt{utils.py} utilizando el estándar Unicode NFKD:
+\begin{lstlisting}[language=Python, caption={Normalización Unicode de Cadenas de Texto}]
+import unicodedata
+
+def normalize_text(text: str) -> str:
+    if not text:
+        return ""
+    text = text.strip().lower()
+    nfkd_form = unicodedata.normalize('NFKD', text)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+\end{lstlisting}
+
+\subsection{Cálculo del Promedio Ponderado y Condición 'NP'}
+En el módulo \texttt{notas.py}, las calificaciones 'NP' (No Se Presentó) se conservan visualmente con su estado original pero equivalen numéricamente a $0.0$ al calcular la suma ponderada del curso:
+\begin{equation}
+Promedio = \frac{\sum_{i=1}^{n} (Nota_i \times Peso_i)}{\sum_{i=1}^{n} Peso_i}
+\end{equation}
+
+% -----------------------------------------------------------------
+% 8. PRUEBAS Y RESULTADOS DE CALIDAD
+% -----------------------------------------------------------------
+\section{Pruebas y Resultados de Calidad}
+La calidad del software fue validada mediante una suite automatizada desarrollada en \textit{pytest}, compuesta por 28 pruebas integrales que verifican la totalidad de las reglas de negocio.
+
+\begin{table}[h!]
+\centering
+\caption{Resumen de la Suite de Pruebas Automatizadas (\texttt{pytest})}
+\begin{tabularx}{\textwidth}{l X c c}
+\toprule
+\textbf{Módulo de Prueba} & \textbf{Aspectos Verificados} & \textbf{Tests} & \textbf{Resultado} \\
+\midrule
+\texttt{test\_database.py} & Esquema, claves foráneas activas y auditoría & 3 & PASSED \\
+\texttt{test\_alumnos\_cursos.py} & Cursos, matrículas e importación con tildes & 3 & PASSED \\
+\texttt{test\_asistencia.py} & Sesiones, tardanza por hora y restricciones & 1 & PASSED \\
+\texttt{test\_notas.py} & Pesos 100\%, validación 0--20, NP, deshacer & 5 & PASSED \\
+\texttt{test\_reportes.py} & Motor de riesgo (faltas/notas) y métricas & 2 & PASSED \\
+\texttt{test\_exportaciones.py} & Re-apertura de Excel openpyxl y tamaño PDF & 1 & PASSED \\
+\texttt{test\_qr.py} & Generación de carnet PNG y decodificación & 1 & PASSED \\
+\texttt{test\_backups\_seed.py} & Idempotencia de seed.py, backups y restauración & 1 & PASSED \\
+\texttt{test\_audit\_*.py} & Pruebas exhaustivas de integridad y math exacto & 11 & PASSED \\
+\midrule
+\textbf{Total} & \textbf{Cobertura Integral del Sistema} & \textbf{28} & \textbf{100\% PASSED} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Evidencias de Funcionamiento}
+Se incluyen los marcadores de las evidencias de pantalla capturadas durante la ejecución del sistema:
+\begin{itemize}
+    \item \textbf{[CAPTURA EVIDENCIA 01]:} Panel "Hoy" mostrando clases programadas del día e indicador de asistencia pendiente.
+    \item \textbf{[CAPTURA EVIDENCIA 02]:} Módulo de Asistencia con el botón "Todos presentes" y marcación automática de tardanza.
+    \item \textbf{[CAPTURA EVIDENCIA 03]:} Módulo "Ingreso Rápido de Notas" con selección automática de estudiante e ingreso con la tecla Enter.
+    \item \textbf{[CAPTURA EVIDENCIA 04]:} Matriz dinámica de calificaciones con colores de aprobación/desaprobación.
+    \item \textbf{[CAPTURA EVIDENCIA 05]:} Módulo de Alumnos en Riesgo indicando los motivos específicos de rendimiento y faltas.
+    \item \textbf{[CAPTURA EVIDENCIA 06]:} Generación y descarga de archivos de actas en formatos Excel y PDF.
+\end{itemize}
+
+% -----------------------------------------------------------------
+% 9. CONCLUSIONES Y TRABAJOS FUTUROS
+% -----------------------------------------------------------------
+\section{Conclusiones y Trabajos Futuros}
+
+\subsection{Conclusiones}
+\begin{enumerate}
+    \item Se logró construir una aplicación local totalmente funcional que resuelve los problemas de lentitud y dispersión en la gestión docente.
+    \item La persistencia en SQLite con restricciones relacionales estrictas y transacciones asegura la integridad de las calificaciones sin riesgo de pérdida de datos.
+    \item La interfaz en Streamlit con modo de "Ingreso Rápido" proporciona una agilidad comparable a sistemas de escritorio nativos.
+    \item La suite de 28 pruebas automatizadas garantiza la estabilidad del software ante modificaciones futuras.
+\end{enumerate}
+
+\subsection{Trabajos Futuros}
+\begin{itemize}
+    \item Implementar el envío opcional de alertas por correo electrónico cuando el docente disponga de conexión a internet.
+    \item Incorporar soporte para sincronización local entre múltiples dispositivos mediante archivos pendrive cifrados.
+\end{itemize}
+
+\newpage
+% -----------------------------------------------------------------
+% REFERENCIAS
+% -----------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{referencias}
+
+\end{document}

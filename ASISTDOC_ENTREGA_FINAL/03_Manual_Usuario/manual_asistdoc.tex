@@ -1,0 +1,208 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{utf8}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{primarycolor}{RGB}{31, 73, 125}
+\definecolor{secondarycolor}{RGB}{89, 89, 89}
+\definecolor{codebg}{RGB}{245, 245, 245}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primarycolor,
+    citecolor=primarycolor,
+    urlcolor=primarycolor
+}
+
+\begin{document}
+
+% -----------------------------------------------------------------
+% PORTADA DEL MANUAL DE USUARIO
+% -----------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+
+    {\Huge \bfseries \color{primarycolor} ASISTDOC} \\[0.5cm]
+    {\Large \bfseries Sistema Local para la Gestión de Asistencia y Calificaciones Académicas} \\[1.5cm]
+
+    \rule{\linewidth}{0.5mm} \\[1cm]
+
+    {\huge \bfseries MANUAL DE USUARIO PARA EL DOCENTE} \\[2cm]
+
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \large
+            \textbf{Manual Operativo} \\[0.2cm]
+            Versión 1.0 (Local / Offline)
+        \end{flushleft}
+    \end{minipage}
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \large
+            \textbf{Público Objetivo:} \\[0.2cm]
+            Docentes Universitarios e Instructores
+        \end{flushright}
+    \end{minipage}
+
+    \vfill
+
+    {\large 2026}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------
+% 1. INTRODUCCIÓN Y BIENVENIDA
+% -----------------------------------------------------------------
+\section{Introducción}
+Bienvenido a \textbf{AsistDoc}, el sistema de escritorio de uso local diseñado especialmente para facilitarle la gestión integral de sus asignaturas, el registro rápido de asistencia, la consolidación de calificaciones y la emisión de reportes académicos oficiales.
+
+AsistDoc funciona de manera 100\% local y privada en su computadora personal. No requiere conexión a internet ni suscripciones a servicios en la nube, garantizando que la información de sus estudiantes permanezca siempre segura y bajo su total control.
+
+% -----------------------------------------------------------------
+% 2. REQUISITOS DEL SISTEMA
+% -----------------------------------------------------------------
+\section{Requisitos del Sistema}
+Para utilizar AsistDoc en su equipo únicamente necesita:
+\begin{itemize}
+    \item \textbf{Sistema Operativo:} Windows 10/11, macOS (10.15 o superior) o Linux.
+    \item \textbf{Interpretador de Python:} Python versión 3.10 o superior.
+    \item \textbf{Navegador Web:} Google Chrome, Mozilla Firefox, Microsoft Edge o Safari (para visualizar la interfaz de la aplicación).
+\end{itemize}
+
+% -----------------------------------------------------------------
+% 3. GUÍA DE INSTALACIÓN PASO A PASO
+% -----------------------------------------------------------------
+\section{Instalación del Sistema}
+
+\subsection{En Sistemas Linux / macOS}
+Abra su terminal de comandos e ingrese la siguiente secuencia:
+\begin{verbatim}
+cd AsistDoc
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{verbatim}
+
+\subsection{En Sistemas Windows}
+Abra la Consola de Comandos (CMD) o PowerShell e ingrese:
+\begin{verbatim}
+cd AsistDoc
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{verbatim}
+
+% -----------------------------------------------------------------
+% 4. INICIO Y NAVEGACIÓN PRINCIPAL
+% -----------------------------------------------------------------
+\section{Inicio y Navegación Principal}
+
+\subsection{Iniciar la Aplicación}
+Para iniciar AsistDoc, ejecute en su terminal el comando:
+\begin{verbatim}
+streamlit run app.py
+\end{verbatim}
+Inmediatamente se abrirá una ventana en su navegador web predeterminado mostrando el panel principal.
+
+\subsection{Barra Lateral de Navegación}
+En el margen izquierdo encontrará la barra lateral con los 6 módulos principales:
+\begin{enumerate}
+    \item \textbf{Hoy:} Visión general de las clases programadas para el día actual.
+    \item \textbf{Cursos y alumnos:} Gestión de asignaturas, horarios e importación de listas.
+    \item \textbf{Asistencia:} Toma rápida de asistencia y cierre de sesión.
+    \item \textbf{Notas:} Matriz de calificaciones, evaluaciones e Ingreso Rápido.
+    \item \textbf{Reportes:} Motor de alertas de riesgo, gráficos y exportaciones Excel/PDF.
+    \item \textbf{Configuración:} Copias de seguridad y auditoría de cambios.
+\end{enumerate}
+
+% -----------------------------------------------------------------
+% 5. GESTIÓN DE CURSOS Y ALUMNOS
+% -----------------------------------------------------------------
+\section{Gestión de Cursos y Alumnos}
+
+\subsection{Creación de un Curso}
+1. Ingrese a \textbf{Cursos y alumnos} $\rightarrow$ Pestaña \textbf{Cursos y Horarios}.\\
+2. Complete el formulario con el Nombre del curso (ej. \textit{Redes II}), Sección (ej. \textit{A}), Nota mínima aprobatoria (ej. \textit{11.0}) y Límite de Faltas (ej. \textit{30\%}).\\
+3. Presione el botón \textbf{Guardar Curso}.
+
+\subsection{Importación Masiva de Alumnos desde Excel o CSV}
+Para matricular a todos los alumnos de un grupo sin escribirlos uno a uno:
+1. Diríjase a la pestaña \textbf{Importación Masiva}.\\
+2. Prepare un archivo Excel (.xlsx) o CSV con al menos dos columnas obligatorias: \texttt{codigo} y \texttt{nombre}.\\
+3. Suba el archivo en el recuadro correspondiente.\\
+4. Verifique la vista previa en pantalla y presione \textbf{Confirmar Importación Masiva}.
+
+% -----------------------------------------------------------------
+% 6. TOMA DE ASISTENCIA
+% -----------------------------------------------------------------
+\section{Toma y Control de Asistencia}
+1. Seleccione el curso y la fecha correspondiente.\\
+2. Si todos los alumnos asistieron, presione el botón \textbf{"Todos presentes"} para marcarlos de un solo clic.\\
+3. Si algún alumno llegó tarde o faltó, modifique únicamente su casilla individual. El sistema calculará automáticamente la \textbf{tardanza} si la hora de registro supera la tolerancia configurada.\\
+4. Al finalizar la clase, presione \textbf{"Cerrar Asistencia"}. Los alumnos no registrados se marcarán automáticamente como \textit{falta}.
+
+% -----------------------------------------------------------------
+% 7. MÓDULO DE NOTAS E INGRESO RÁPIDO
+% -----------------------------------------------------------------
+\section{Módulo de Calificaciones e Ingreso Rápido}
+
+\subsection{Modo "Ingreso Rápido" (Función Estrella)}
+Este modo está diseñado para registrar notas de forma ágil sin usar el ratón:
+1. Ingrese a \textbf{Notas} $\rightarrow$ Pestaña \textbf{INGRESO RÁPIDO}.\\
+2. Seleccione la evaluación activa (ej. \textit{Práctica 2}).\\
+3. En el buscador escriba el apellido o código del alumno (ej. \textit{mamani}). El sistema encuentra coincidencias ignorando mayúsculas y tildes.\\
+4. Introduzca la nota (de 0 a 20) o escriba \textbf{NP} si el alumno no se presentó, y presione \textbf{Enter}.\\
+5. La nota quedará registrada y el formulario se limpiará listo para el siguiente alumno.
+
+\subsection{Deshacer Último Ingreso}
+Si cometió un error de digitación, presione el botón \textbf{"Deshacer Último Ingreso"} para revertir inmediatamente la última calificación guardada.
+
+\subsection{Calculadora "¿Cuánto Necesita?"}
+En la pestaña \textbf{"¿Cuánto Necesita?"}, seleccione un estudiante y una evaluación pendiente. El sistema le indicará exactamente qué calificación sobre 20 requiere para alcanzar la nota mínima aprobatoria considerando los pesos del curso.
+
+% -----------------------------------------------------------------
+% 8. REPORTES Y EXPORTACIÓN
+% -----------------------------------------------------------------
+\section{Reportes, Alumnos en Riesgo y Exportación}
+1. Diríjase al módulo \textbf{Reportes}.\\
+2. En la pestaña \textbf{Alumnos en Riesgo}, consulte la lista de estudiantes clasificados como \textbf{ALTO RIESGO} o \textbf{ATENCIÓN} debido a bajo rendimiento o exceso de inasistencias.\\
+3. En la pestaña \textbf{Descargar Informes}, presione \textbf{"Generar Acta Excel"} para obtener la matriz completa con formato profesional de colores (\textit{.xlsx}) o \textbf{"Generar Acta PDF"} para la versión oficial imprimible.
+
+% -----------------------------------------------------------------
+% 9. COPIAS DE SEGURIDAD
+% -----------------------------------------------------------------
+\section{Copias de Seguridad}
+Para proteger su información académica:
+1. Vaya a \textbf{Configuración} $\rightarrow$ Pestaña \textbf{Copias de Seguridad}.\\
+2. Presione \textbf{"Crear Copia de Seguridad Ahora"}. El sistema generará un archivo con fecha y hora en la carpeta \texttt{backups/}.\\
+3. Si necesita restaurar una copia previa, selecciónela de la lista y confirme la restauración.
+
+% -----------------------------------------------------------------
+% 10. SOLUCIÓN DE PROBLEMAS FRECUENTES
+% -----------------------------------------------------------------
+\section{Solución de Problemas Frecuentes}
+
+\begin{table}[h!]
+\centering
+\caption{Guía de Solución de Inconvenientes Frecuentes}
+\begin{tabularx}{\textwidth}{X X}
+\toprule
+\textbf{Problema / Mensaje} & \textbf{Solución Sugerida} \\
+\midrule
+\textit{"Puerto 8501 ocupado"} & Inicie Streamlit en un puerto alternativo: \texttt{streamlit run app.py --server.port 8502}. \\
+\textit{"El archivo debe contener las columnas 'codigo' y 'nombre'"} & Abra su archivo Excel de importación y asegúrese de que la primera fila tenga exactamente las cabeceras \texttt{codigo} y \texttt{nombre}. \\
+\textit{"La nota debe estar entre 0.0 y 20.0"} & Verifique el valor ingresado. Si el estudiante no rindió la prueba, escriba la palabra \textbf{NP}. \\
+\textit{"Suma de pesos no es 100\%"} & Vaya a Configurar Evaluaciones y ajuste los pesos porcentuales para que su suma alcance exactamente el 100\%. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

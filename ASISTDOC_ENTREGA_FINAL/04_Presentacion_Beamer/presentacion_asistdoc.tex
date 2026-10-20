@@ -1,0 +1,294 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usepackage[utf8]{utf8}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+% Tema Sobrio y Académico sin Logos Institucionales
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\definecolor{primaryblue}{RGB}{31, 73, 125}
+\definecolor{darkgray}{RGB}{60, 60, 60}
+
+\setbeamercolor{palette primary}{bg=primaryblue,fg=white}
+\setbeamercolor{titlelike}{parent=palette primary}
+\setbeamercolor{structure}{fg=primaryblue}
+
+\title[ASISTDOC]{ASISTDOC}
+\subtitle{Sistema Local para la Gestión de Asistencia y Calificaciones Académicas}
+\author[Proyecto Universitario]{Estudiante de Ingeniería de Software / Sistemas}
+\institute[Sistemas]{Proyecto de Ingeniería de Software e Integración de Sistemas}
+\date{2026}
+
+\begin{document}
+
+% -----------------------------------------------------------------
+% SLIDE 1: PORTADA
+% -----------------------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 2: PROBLEMÁTICA
+% -----------------------------------------------------------------
+\begin{frame}{Problemática en la Gestión Académica Docente}
+  \begin{columns}
+    \column{0.5\textwidth}
+      \begin{block}{Desafíos Tradicionales}
+        \begin{itemize}
+          \item \textbf{Consumo de tiempo:} Registro manual repetitivo de asistencia y notas en hojas de cálculo.
+          \item \textbf{Dispersión de archivos:} Múltiples versiones de Excel propensas a errores.
+          \item \textbf{Detección tardía:} Inexistencia de alertas tempranas sobre estudiantes en riesgo.
+        \end{itemize}
+      \end{block}
+    \column{0.5\textwidth}
+      \begin{block}{Impacto Operativo}
+        \begin{itemize}
+          \item Carga administrativa excesiva durante la sesión lectiva.
+          \item Riesgo de inconsistencia y falta de auditoría ante reclamos.
+          \item Dificultad para generar reportes oficiales rápidamente.
+        \end{itemize}
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 3: SOLUCIÓN PROPUESTA
+% -----------------------------------------------------------------
+\begin{frame}{Solución Propuesta: AsistDoc}
+  \begin{center}
+    \Large \textbf{AsistDoc} — Aplicación Modular 100\% Local y Offline
+  \end{center}
+  \vspace{0.3cm}
+  \begin{columns}
+    \column{0.33\textwidth}
+      \begin{alertblock}{Autonomía y Privacidad}
+        Sin dependencia de internet, servidores en la nube ni pagos de licencias.
+      \end{alertblock}
+    \column{0.33\textwidth}
+      \begin{exampleblock}{Agilidad Docente}
+        Toma rápida de asistencia e ingreso ágil de notas por teclado.
+      \end{exampleblock}
+    \column{0.33\textwidth}
+      \begin{block}{Integridad Estricta}
+        Base de datos SQLite con transacciones, auditoría y backups.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 4: OBJETIVOS DEL PROYECTO
+% -----------------------------------------------------------------
+\begin{frame}{Objetivos del Proyecto}
+  \begin{block}{Objetivo General}
+    Diseñar e implementar un sistema local para que un docente gestione cursos, alumnos, asistencias, evaluaciones, notas, detección de riesgo y exportación de reportes académicos.
+  \end{block}
+
+  \begin{block}{Objetivos Específicos}
+    \begin{itemize}
+      \item Garantizar la integridad referencial mediante SQLite relacional y claves foráneas.
+      \item Desarrollar el modo de "Ingreso Rápido de Notas" con búsqueda normalizada sin tildes.
+      \item Construir un motor de reglas para la clasificación de alumnos en riesgo (Rendimiento / Faltas).
+      \item Proveer exportación de actas oficiales a Excel (\textit{openpyxl}) y PDF (\textit{ReportLab}).
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 5: GESTIÓN DE PROYECTOS Y ALCANCE
+% -----------------------------------------------------------------
+\begin{frame}{Gestión de Proyectos y Alcance}
+  \begin{columns}
+    \column{0.5\textwidth}
+      \textbf{Incluido en el Alcance:}
+      \begin{itemize}
+        \item Periodos, cursos, secciones y horarios semanales.
+        \item Padrón e importación masiva de alumnos (CSV/Excel).
+        \item Asistencias con tardanza automática y cierre de sesión.
+        \item Matriz de notas, soporte NP, deshacer y metas.
+        \item Copias de seguridad e historial de cambios.
+      \end{itemize}
+    \column{0.5\textwidth}
+      \textbf{Fuera del Alcance (Alcance Controlado):}
+      \begin{itemize}
+        \item Acceso multi-usuario / portal para alumnos.
+        \item Sincronización cloud o servicios externos.
+        \item Autenticación remota o bases públicas.
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 6: ARQUITECTURA DEL SISTEMA
+% -----------------------------------------------------------------
+\begin{frame}{Arquitectura del Software (Capas Desacopladas)}
+  \begin{center}
+    \begin{tikzpicture}[scale=0.85, every node/.style={transform shape}]
+      \node [rectangle, draw, fill=blue!15, text width=9cm, text centered, rounded corners] (ui) {\textbf{Capa de Presentación:} Streamlit (\texttt{app.py})};
+      \node [rectangle, draw, fill=gray!20, text width=9cm, text centered, rounded corners, below=0.5cm of ui] (logic) {\textbf{Lógica de Negocio:} \texttt{cursos.py}, \texttt{alumnos.py}, \texttt{asistencia.py}, \texttt{notas.py}, \texttt{reportes.py}};
+      \node [rectangle, draw, fill=teal!20, text width=9cm, text centered, rounded corners, below=0.5cm of logic] (data) {\textbf{Persistencia \& Datos:} SQLite (\texttt{database.py}), \texttt{exportaciones.py}, \texttt{backups.py}};
+
+      \draw [<->, thick] (ui) -- (logic);
+      \draw [<->, thick] (logic) -- (data);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 7: DISEÑO DE BASE DE DATOS
+% -----------------------------------------------------------------
+\begin{frame}{Esquema de Base de Datos (SQLite - 11 Tablas)}
+  \begin{columns}
+    \column{0.5\textwidth}
+      \begin{itemize}
+        \item \texttt{periodos} $\rightarrow$ \texttt{cursos} $\rightarrow$ \texttt{horarios}
+        \item \texttt{alumnos} $\leftrightarrow$ \texttt{matriculas} $\leftrightarrow$ \texttt{cursos}
+        \item \texttt{sesiones\_asistencia} $\rightarrow$ \texttt{asistencias}
+        \item \texttt{evaluaciones} $\rightarrow$ \texttt{notas}
+        \item \texttt{historial} y \texttt{configuracion}
+      \end{itemize}
+    \column{0.5\textwidth}
+      \begin{block}{Restricciones y Rendimiento}
+        \begin{itemize}
+          \item \texttt{PRAGMA foreign\_keys = ON;}
+          \item \texttt{UNIQUE(sesion\_id, alumno\_id)}
+          \item \texttt{UNIQUE(alumno\_id, evaluacion\_id)}
+          \item 11 Índices para búsquedas inmediatas.
+        \end{itemize}
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 8: ASISTENCIA Y CONTROL DE TARDANZAS
+% -----------------------------------------------------------------
+\begin{frame}{Módulo de Asistencia y Control de Tardanzas}
+  \begin{itemize}
+    \item \textbf{Apertura de Sesión:} Creación de sesión única por curso y fecha.
+    \item \textbf{Marcado Rápido:} Botón \textit{"Todos presentes"} para registrar al grupo en 1 segundo.
+    \item \textbf{Cálculo de Tardanzas:} Si la hora de llegada supera \texttt{hora\_inicio + minutos\_tolerancia}, se asigna automáticamente el estado \textit{tardanza}.
+    \item \textbf{Cierre Seguro:} Marca a los no registrados como \textit{falta} y bloquea la sesión para evitar ediciones accidentales.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 9: NOTAS — FUNCIÓN ESTRELLA
+% -----------------------------------------------------------------
+\begin{frame}{Módulo de Notas: Ingreso Rápido}
+  \begin{columns}
+    \column{0.55\textwidth}
+      \begin{block}{Flujo de Trabajo Optimizado}
+        \begin{enumerate}
+          \item Selección de la Evaluación Activa.
+          \item Búsqueda normalizada (omite tildes y mayúsculas).
+          \item Selección automática al coincidir.
+          \item Inserción de nota (0--20) o \textbf{NP} + \textbf{Enter}.
+          \item Limpieza inmediata para la siguiente búsqueda.
+        \end{enumerate}
+      \end{block}
+    \column{0.45\textwidth}
+      \begin{exampleblock}{Tratamiento de NP}
+        \begin{itemize}
+          \item Se guarda como \texttt{valor = NULL} y \texttt{estado = 'NP'}.
+          \item Mantiene su representación visual \textbf{NP}.
+          \item Cuenta como $0.0$ en los promedios académicos.
+        \end{itemize}
+      \end{exampleblock}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 10: SEGUIMIENTO ACADÉMICO Y RIESGO
+% -----------------------------------------------------------------
+\begin{frame}{Seguimiento Académico: Calculadora y Motor de Riesgo}
+  \begin{columns}
+    \column{0.5\textwidth}
+      \begin{block}{Calculadora "¿Cuánto Necesita?"}
+        Determina la nota mínima requerida en una evaluación pendiente mediante:
+        \[ NotaReq = \frac{NotaMin - SumaActual}{PesoTarget / 100} \]
+        Indica si el objetivo es alcanzable o si requiere más de la escala máxima.
+      \end{block}
+    \column{0.5\textwidth}
+      \begin{alertblock}{Motor de Alumnos en Riesgo}
+        Clasificación automática por reglas:
+        \begin{itemize}
+          \item \textbf{Rendimiento:} Promedio $< 11.0$
+          \item \textbf{Asistencia:} Faltas $\ge 30\%$
+          \item Clasifica en \textbf{NORMAL}, \textbf{ATENCIÓN} y \textbf{ALTO RIESGO}.
+        \end{itemize}
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 11: EXPORTACIÓN Y REPORTES
+% -----------------------------------------------------------------
+\begin{frame}{Reportes, Exportación y Copias de Seguridad}
+  \begin{itemize}
+    \item \textbf{Reportes Excel (\textit{openpyxl}):} Generación de actas con encabezados, anchos automáticos, bordes y formato condicional de colores.
+    \item \textbf{Actas PDF (\textit{ReportLab}):} Documentos oficiales imprimibles con tablas estructuradas.
+    \item \textbf{Gráficos Interactivos:} Histogramas de notas y gráficos de dona para asistencia con Plotly.
+    \item \textbf{Respaldos (.db):} Creación de copias snapshot de SQLite con fecha y hora, y restauración garantizada.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 12: PRUEBAS Y CALIDAD (PYTEST)
+% -----------------------------------------------------------------
+\begin{frame}{Resultados de Pruebas de Calidad (\texttt{pytest})}
+  \begin{center}
+    \small
+    \begin{tabular}{l c c}
+      \toprule
+      \textbf{Módulo Evaluado} & \textbf{Aspectos Comprobados} & \textbf{Estado} \\
+      \midrule
+      Base de Datos & Esquema, claves foráneas, restricción UNIQUE & 100\% PASSED \\
+      Cursos y Alumnos & Registro, importación CSV/Excel, tildes & 100\% PASSED \\
+      Asistencia & Tardanza automática, cierre de sesión & 100\% PASSED \\
+      Notas y NP & Rango 0--20, NP = 0.0, deshacer último & 100\% PASSED \\
+      Cálculos & Promedio ponderado y "¿Cuánto necesita?" & 100\% PASSED \\
+      Exportaciones & Re-apertura de Excel y generación de PDF & 100\% PASSED \\
+      \midrule
+      \textbf{Total} & \textbf{28 Pruebas Automatizadas} & \textbf{100\% PASSED} \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 13: ESTRUCTURA DE LA DEMOSTRACIÓN EN VIVO
+% -----------------------------------------------------------------
+\begin{frame}{Demostración Práctica del Sistema}
+  \begin{center}
+    \Large \textbf{DEMOSTRACIÓN EN VIVO} \\[0.4cm]
+    \small
+    \begin{enumerate}
+      \item \textbf{Panel Hoy:} Visualización de la clase programada del día.
+      \item \textbf{Asistencia:} Inicio de sesión, "Todos presentes" y cambio de tardanza.
+      \item \textbf{Notas — Ingreso Rápido:} Búsqueda sin tildes ("mamani"), ingreso de nota 15 y Enter.
+      \item \textbf{Seguimiento:} Matriz de notas, calculadora y lista de Alumnos en Riesgo.
+      \item \textbf{Exportación:} Generación de Acta oficial en Excel y PDF.
+    \end{enumerate}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------
+% SLIDE 14: CONCLUSIONES
+% -----------------------------------------------------------------
+\begin{frame}{Conclusiones}
+  \begin{itemize}
+    \item \textbf{Solución Efectiva:} AsistDoc reduce el tiempo operativo docente y elimina la fragmentación de información en hojas de cálculo tradicionales.
+    \item \textbf{Robustez Técnica:} La combinación de SQLite relacional con una suite de 28 pruebas automatizadas asegura la integridad y estabilidad del sistema.
+    \item \textbf{Usabilidad Agilizada:} El modo de ingreso rápido y la visualización de riesgos brindan un soporte de decisión oportuno para la labor pedagógica.
+  \end{itemize}
+  \vspace{0.4cm}
+  \begin{center}
+    \large \textbf{¡Muchas Gracias por su Atención!}
+  \end{center}
+\end{frame}
+
+\end{document}

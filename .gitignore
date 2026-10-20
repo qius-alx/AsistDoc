@@ -6,3 +6,4 @@ exports/*
 logs/*.log
 .venv/
 .pytest_cache/
+*.zip
