@@ -19,15 +19,21 @@ def crear_evaluacion(
     if peso <= 0 or peso > 100:
         raise ValueError("El peso debe ser mayor a 0% y menor o igual a 100%.")
 
+    nom_clean = nombre.strip()
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
+        cursor.execute("SELECT id FROM evaluaciones WHERE curso_id = ? AND nombre = ?", (curso_id, nom_clean))
+        row = cursor.fetchone()
+        if row:
+            return row['id']
+
         cursor.execute("""
         INSERT INTO evaluaciones (curso_id, nombre, peso, fecha, orden, activa)
         VALUES (?, ?, ?, ?, ?, 1)
-        """, (curso_id, nombre.strip(), peso, fecha, orden))
+        """, (curso_id, nom_clean, peso, fecha, orden))
         eval_id = cursor.lastrowid
         conn.commit()
-        registrar_historial("evaluaciones", eval_id, "nombre", None, nombre, "CREAR", db_path)
+        registrar_historial("evaluaciones", eval_id, "nombre", None, nom_clean, "CREAR", db_path)
         return eval_id
 
 def actualizar_evaluacion(
@@ -67,9 +73,6 @@ def listar_evaluaciones_curso(curso_id: int, solo_activas: bool = True, db_path:
         return cursor.fetchall()
 
 def verificar_suma_pesos(curso_id: int, db_path: str = DB_PATH) -> Tuple[float, bool]:
-    """
-    Retorna (suma_pesos, es_cien_por_ciento).
-    """
     evals = listar_evaluaciones_curso(curso_id, solo_activas=True, db_path=db_path)
     suma = sum(e['peso'] for e in evals)
     return round(suma, 2), abs(suma - 100.0) < 0.01
@@ -80,7 +83,7 @@ def copiar_evaluaciones_entre_cursos(curso_origen_id: int, curso_destino_id: int
         try:
             crear_evaluacion(curso_destino_id, e['nombre'], e['peso'], e['fecha'], e['orden'], db_path=db_path)
         except sqlite3.IntegrityError:
-            pass # Ignorar duplicados de nombre
+            pass
 
 # --- REGISTRO Y VALIDACIÓN DE NOTAS ---
 
@@ -88,20 +91,15 @@ def registrar_o_actualizar_nota(
     alumno_id: int,
     evaluacion_id: int,
     valor: Optional[float] = None,
-    estado: str = 'registrada', # registrada, NP, pendiente
+    estado: str = 'registrada',
     db_path: str = DB_PATH
 ) -> Dict[str, Any]:
-    """
-    Registra o actualiza la nota de un alumno en una evaluación.
-    Aplica validaciones rigurosas de rango y estado.
-    """
     if estado not in ['registrada', 'NP', 'pendiente']:
         raise ValueError(f"Estado de nota inválido: {estado}")
 
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
 
-        # Obtener escala_max del curso al que pertenece la evaluación
         cursor.execute("""
         SELECT e.curso_id, c.escala_max, e.nombre as eval_nombre
         FROM evaluaciones e
@@ -114,17 +112,15 @@ def registrar_o_actualizar_nota(
 
         escala_max = eval_info['escala_max']
 
-        # Validaciones de valor
         if estado == 'registrada':
             if valor is None:
                 raise ValueError("Para el estado 'registrada' debe proporcionar un valor numérico.")
             valor = float(valor)
             if valor < 0 or valor > escala_max:
                 raise ValueError(f"La nota debe estar entre 0.0 y {escala_max:.1f}.")
-        else: # NP o pendiente
+        else:
             valor = None
 
-        # Obtener valor anterior para historial
         cursor.execute("SELECT valor, estado FROM notas WHERE alumno_id = ? AND evaluacion_id = ?", (alumno_id, evaluacion_id))
         prev = cursor.fetchone()
         val_anterior_str = f"{prev['valor']} ({prev['estado']})" if prev else "None"
@@ -145,9 +141,6 @@ def registrar_o_actualizar_nota(
         return {"alumno_id": alumno_id, "evaluacion_id": evaluacion_id, "valor": valor, "estado": estado}
 
 def deshacer_ultimo_ingreso_nota(curso_id: int, db_path: str = DB_PATH) -> bool:
-    """
-    Deshace el último ingreso de nota realizado en el curso consultando la tabla historial.
-    """
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -161,7 +154,6 @@ def deshacer_ultimo_ingreso_nota(curso_id: int, db_path: str = DB_PATH) -> bool:
         if not row:
             return False
 
-        # Extraer alumno_id de campo 'alumno_X'
         try:
             alumno_id = int(row['campo'].replace('alumno_', ''))
             eval_id = row['registro_id']
@@ -170,14 +162,12 @@ def deshacer_ultimo_ingreso_nota(curso_id: int, db_path: str = DB_PATH) -> bool:
             if val_ant_str == "None" or not val_ant_str:
                 cursor.execute("DELETE FROM notas WHERE alumno_id = ? AND evaluacion_id = ?", (alumno_id, eval_id))
             else:
-                # Parsear anterior ej: "15.0 (registrada)" o "None (NP)"
                 parts = val_ant_str.split(" ")
                 val_val = float(parts[0]) if parts[0] != "None" else None
                 est_val = parts[1].replace("(", "").replace(")", "")
                 cursor.execute("UPDATE notas SET valor = ?, estado = ? WHERE alumno_id = ? AND evaluacion_id = ?",
                                (val_val, est_val, alumno_id, eval_id))
 
-            # Registrar el hecho de deshacer en historial
             cursor.execute("DELETE FROM historial WHERE id = ?", (row['id'],))
             conn.commit()
             return True
@@ -191,11 +181,6 @@ def calcular_promedio_alumno(
     curso_id: int,
     db_path: str = DB_PATH
 ) -> Dict[str, Any]:
-    """
-    Calcula el promedio ponderado del alumno.
-    NP cuenta como 0.0 en el promedio.
-    Aplica regla de redondeo configurada en el curso.
-    """
     curso = obtener_curso_por_id(curso_id, db_path=db_path)
     if not curso:
         raise ValueError("Curso no encontrado.")
@@ -212,7 +197,6 @@ def calcular_promedio_alumno(
 
         suma_ponderada = 0.0
         peso_total_evaluado = 0.0
-        peso_total_curso = sum(e['peso'] for e in evaluaciones)
         pendientes = 0
 
         for e in evaluaciones:
@@ -222,21 +206,17 @@ def calcular_promedio_alumno(
             if not n or n['estado'] == 'pendiente':
                 pendientes += 1
             elif n['estado'] == 'NP':
-                # NP equivale a 0.0
                 suma_ponderada += 0.0 * (e['peso'] / 100.0)
                 peso_total_evaluado += e['peso']
             elif n['estado'] == 'registrada' and n['valor'] is not None:
                 suma_ponderada += n['valor'] * (e['peso'] / 100.0)
                 peso_total_evaluado += e['peso']
 
-        # Normalizar si no todas las evaluaciones se han tomado aún
         if peso_total_evaluado > 0:
             promedio_raw = (suma_ponderada / (peso_total_evaluado / 100.0))
         else:
             promedio_raw = 0.0
 
-        # Regla de Redondeo
-        # Tradicional: si la parte decimal >= redondeo_desde, redondea arriba
         entero = int(promedio_raw)
         decimal = promedio_raw - entero
         if decimal >= redondeo_desde:
@@ -262,16 +242,6 @@ def calcular_nota_necesaria(
     evaluacion_pendiente_id: int,
     db_path: str = DB_PATH
 ) -> Dict[str, Any]:
-    """
-    Calcula cuánto necesita obtener un estudiante en una evaluación pendiente para alcanzar la nota mínima.
-
-    Fórmula:
-    Sea N_min = nota_minima del curso.
-    Suma_Actual = sum(nota_i * (peso_i / 100)) para evaluaciones rendidas (NP = 0).
-    Peso_Pendiente = peso de la evaluación elegida.
-    Nota_Requerida X satisface: Suma_Actual + X * (Peso_Pendiente / 100) >= N_min
-    Despejando: X = (N_min - Suma_Actual) / (Peso_Pendiente / 100)
-    """
     curso = obtener_curso_por_id(curso_id, db_path=db_path)
     if not curso:
         raise ValueError("Curso no encontrado.")
@@ -301,7 +271,6 @@ def calcular_nota_necesaria(
             elif n and n['estado'] == 'NP':
                 suma_actual += 0.0
 
-        # Cálculo de nota requerida
         diferencia = nota_minima - suma_actual
         if diferencia <= 0:
             return {
@@ -327,10 +296,6 @@ def calcular_nota_necesaria(
         }
 
 def obtener_matriz_notas_curso(curso_id: int, db_path: str = DB_PATH) -> pd.DataFrame:
-    """
-    Genera el DataFrame dinámico de la acta de notas del curso.
-    Columnas: Código | Alumno | [Eval 1] | [Eval 2] ... | Promedio | Condición
-    """
     alumnos = listar_alumnos_curso(curso_id, solo_activos=True, db_path=db_path)
     evaluaciones = listar_evaluaciones_curso(curso_id, solo_activas=True, db_path=db_path)
 
