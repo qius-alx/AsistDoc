@@ -128,7 +128,7 @@ if modulo == "Hoy":
 # ==========================================
 elif modulo == "Cursos y alumnos":
     st.title("📘 Cursos, Horarios y Alumnos")
-    tabs = st.tabs(["Cursos y Horarios", "Gestión de Alumnos", "Importación Masiva (CSV/Excel)"])
+    tabs = st.tabs(["Cursos y Horarios", "Gestión de Alumnos", "Importación Masiva (CSV/Excel)", "🪪 Carnets QR"])
 
     with tabs[0]:
         st.subheader("Gestión de Cursos del Periodo")
@@ -226,6 +226,28 @@ elif modulo == "Cursos y alumnos":
                 except Exception as e:
                     st.error(f"Error al leer archivo: {e}")
 
+    with tabs[3]:
+        st.subheader("Generación de Carnets e Identificación QR")
+        cursos = listar_cursos(periodo_id=periodo_actual_id, solo_activos=True)
+        if cursos:
+            curso_qr_id = st.selectbox("Seleccionar Curso para Carnets QR", [c['id'] for c in cursos], format_func=lambda x: next(f"{c['nombre']} - {c['seccion']}" for c in cursos if c['id'] == x), key="c_qr")
+            alumnos_qr = listar_alumnos_curso(curso_qr_id)
+            if alumnos_qr:
+                st.info(f"Mostrando {len(alumnos_qr)} alumnos matriculados.")
+                for a in alumnos_qr:
+                    with st.expander(f"🪪 {a['nombre']} ({a['codigo']})"):
+                        col_q1, col_q2 = st.columns(2)
+                        with col_q1:
+                            qr_bytes = generar_codigo_qr_bytes(a['codigo'])
+                            st.image(qr_bytes, caption=f"QR: ASISTDOC|ALUMNO|{a['codigo']}", width=180)
+                            st.download_button("📥 Descargar QR (PNG)", data=qr_bytes, file_name=f"QR_{a['codigo']}.png", mime="image/png", key=f"dl_qr_{a['id']}")
+                        with col_q2:
+                            carnet_bytes = generar_carnet_alumno(a['codigo'], a['nombre'])
+                            st.image(carnet_bytes, caption=f"Carnet de {a['nombre']}", width=280)
+                            st.download_button("📥 Descargar Carnet (PNG)", data=carnet_bytes, file_name=f"Carnet_{a['codigo']}.png", mime="image/png", key=f"dl_car_{a['id']}")
+            else:
+                st.info("Sin alumnos matriculados en este curso.")
+
 # ==========================================
 # 3. ASISTENCIA
 # ==========================================
@@ -278,6 +300,26 @@ elif modulo == "Asistencia":
                 abrir_sesion_para_correccion(sesion_id)
                 st.success("Sesión reabierta.")
                 st.rerun()
+
+        # Registro Rápido por Código QR
+        if estado_sesion == 'abierta':
+            with st.expander("📷 Registro Rápido mediante Escáner / Código QR", expanded=False):
+                st.markdown("Escanee el código QR o ingrese la cadena del QR (formato: `ASISTDOC|ALUMNO|CODIGO` o simplemente el código del alumno):")
+                with st.form("form_registro_qr"):
+                    qr_input = st.text_input("Cadena o Código QR del Alumno", key="input_qr_asist")
+                    btn_qr = st.form_submit_button("Marcado Rápido por QR")
+                    if btn_qr and qr_input.strip():
+                        # Decodificar texto
+                        cod_dec = decodificar_qr_texto(qr_input.strip()) or qr_input.strip().upper()
+                        # Buscar alumno en el curso
+                        alumnos_c = listar_alumnos_curso(curso_id)
+                        alumno_target = next((a for a in alumnos_c if a['codigo'].upper() == cod_dec), None)
+                        if alumno_target:
+                            est_final = registrar_asistencia_individual(sesion_id, alumno_target['id'], estado='presente', auto_calcular_tardanza=True)
+                            st.success(f"✓ Asistencia registrada: {alumno_target['nombre']} ({alumno_target['codigo']}) — {est_final.upper()}")
+                            st.rerun()
+                        else:
+                            st.error(f"No se encontró un alumno con código '{cod_dec}' matriculado en este curso.")
 
         st.markdown("---")
         resumen_alumnos = obtener_resumen_asistencia_sesion(sesion_id)
